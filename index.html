@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Система контроля качества | Единый реестр</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+        }
+        body {
+            background: linear-gradient(145deg, #fff0f5 0%, #ffe4ed 100%);
+            color: #4a2e3a;
+            min-height: 100vh;
+        }
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .login-card {
+            background: #fff5f8;
+            border-radius: 48px;
+            padding: 40px 35px;
+            width: 90%;
+            max-width: 480px;
+            text-align: center;
+            box-shadow: 0 35px 50px -15px rgba(140, 70, 90, 0.4);
+            border: 1px solid #fbc4d4;
+        }
+        .login-icon {
+            font-size: 60px;
+            color: #e6a7bd;
+            background: rgba(230, 167, 189, 0.2);
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 60px;
+            margin: 0 auto 20px;
+        }
+        .input-group {
+            margin-bottom: 18px;
+            text-align: left;
+        }
+        .input-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #a55672;
+            margin-bottom: 6px;
+            display: block;
+        }
+        .login-card input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #ffe0e8;
+            border-radius: 32px;
+            background: white;
+            font-size: 1rem;
+        }
+        .login-card input:focus {
+            border-color: #e6a7bd;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(230, 167, 189, 0.3);
+        }
+        .login-btn {
+            background: linear-gradient(145deg, #e6a7bd, #d47b9c);
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn {
+            background: linear-gradient(145deg, #e6a7bd, #d47b9c);
+            color: white;
+            border: none;
+            padding: 12px 26px;
+            border-radius: 60px;
+            cursor: pointer;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            transition: 0.2s;
+            box-shadow: 0 6px 14px -6px #bc7a97;
+        }
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, #fff0f5 0%, #ffe4ed 100%);
+            backdrop-filter: blur(8px);
+            border-right: 1px solid rgba(255, 220, 230, 0.8);
+            padding: 28px 20px;
+            display: flex;
+            flex-direction: column;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            box-shadow: 5px 0 25px -10px rgba(140, 70, 90, 0.15);
+        }
+        .logo-area {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .logo-area i {
+            font-size: 48px;
+            color: #d47b9c;
+            background: rgba(255, 245, 250, 0.7);
+            padding: 15px;
+            border-radius: 28px;
+        }
+        .logo-area h2 {
+            font-size: 1.5rem;
+            margin-top: 12px;
+            color: #a55672;
+        }
+        .nav-tabs {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 18px;
+            border-radius: 28px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #9b5e74;
+            background: rgba(255, 240, 245, 0.4);
+        }
+        .nav-item i {
+            width: 28px;
+            font-size: 1.2rem;
+        }
+        .nav-item:hover {
+            background: rgba(255, 220, 230, 0.9);
+            color: #bc5f7e;
+            transform: translateX(5px);
+        }
+        .nav-item.active {
+            background: #ffeef4;
+            color: #bc5f7e;
+            box-shadow: 0 6px 14px rgba(180, 80, 110, 0.2);
+            border-left: 4px solid #e6a7bd;
+        }
+        .user-info-sidebar {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px dashed #f0bfd0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 245, 250, 0.7);
+            padding: 8px 16px;
+            border-radius: 60px;
+        }
+        .logout-sidebar {
+            background: transparent;
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            color: #d47b9c;
+        }
+        .main-content {
+            flex: 1;
+            padding: 28px 32px;
+            overflow-x: auto;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+        .stat-card {
+            background: rgba(255, 240, 245, 0.75);
+            backdrop-filter: blur(8px);
+            border-radius: 28px;
+            padding: 20px 22px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            border: 1px solid rgba(255, 220, 220, 0.7);
+            box-shadow: 0 10px 22px -12px rgba(140, 70, 90, 0.2);
+        }
+        .stat-card i {
+            font-size: 2.4rem;
+            color: #d47b9c;
+        }
+        .stat-info span:first-child {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #a55672;
+        }
+        .stat-info span:last-child {
+            font-size: 0.9rem;
+            color: #9b5e74;
+        }
+        .tab-content {
+            display: none;
+            animation: fadeSlide 0.25s ease;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeSlide {
+            from { opacity: 0; transform: translateY(8px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+        .form-section, .data-section {
+            background: rgba(255, 245, 250, 0.7);
+            border-radius: 28px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 230, 240, 0.9);
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .input-wrapper i {
+            position: absolute;
+            left: 15px;
+            color: #d991af;
+            pointer-events: none;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 14px 18px 14px 45px;
+            border: 2px solid rgba(255, 225, 235, 0.9);
+            border-radius: 24px;
+            font-size: 1rem;
+            background: rgba(255, 250, 252, 0.95);
+            transition: all 0.2s;
+            color: #4e2e3a;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #e6a7bd;
+            color: #bc5f7e;
+            box-shadow: none;
+        }
+        .btn-outline:hover {
+            background: #fff0f5;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            overflow-x: auto;
+            display: block;
+        }
+        th {
+            background: #ffeef4;
+            color: #ac6380;
+            padding: 16px 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 14px 12px;
+            border-bottom: 1px solid #ffe0e8;
+        }
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+            background: rgba(255, 245, 245, 0.6);
+            padding: 15px 18px;
+            border-radius: 28px;
+            align-items: center;
+        }
+        .filter-bar input, .filter-bar select {
+            width: auto;
+            min-width: 170px;
+            padding: 10px 18px 10px 40px;
+        }
+        .badge-responsible {
+            background: #ffe0e8;
+            border-radius: 30px;
+            padding: 5px 14px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+            margin: 2px 4px 2px 0;
+        }
+        .status-completed { background: #d1fae5; color: #065f46; padding: 5px 14px; border-radius: 40px; display: inline-block; }
+        .status-pending { background: #fef3c7; color: #b45309; padding: 5px 14px; border-radius: 40px; }
+        .status-approved { background: #dbeafe; color: #1e40af; padding: 5px 14px; border-radius: 40px; }
+        .status-open { background: #fee2e2; color: #991b1b; padding: 5px 14px; border-radius: 40px; }
+        .status-inwork { background: #fff3cd; color: #856404; padding: 5px 14px; border-radius: 40px; }
+        .status-closed { background: #d4edda; color: #155724; padding: 5px 14px; border-radius: 40px; }
+        .delete-btn, .edit-status-btn { background: none; border: none; color: #e08baa; cursor: pointer; font-size: 1.2rem; margin: 0 4px; transition: 0.2s; }
+        .edit-status-btn:hover { color: #6c5ce7; }
+        .footer { text-align: center; margin-top: 40px; color: #b2849a; background: rgba(255, 240, 245, 0.6); padding: 16px; border-radius: 60px; font-size: 0.85rem; }
+        .hidden { display: none; }
+        @media (max-width: 768px) {
+            .app-layout { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; position: relative; flex-direction: row; flex-wrap: wrap; padding: 15px; gap: 10px; }
+            .nav-tabs { flex-direction: row; flex-wrap: wrap; gap: 8px; }
+            .nav-item { padding: 8px 16px; }
+            .user-info-sidebar { margin-top: 0; border-top: none; }
+            .main-content { padding: 20px; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .form-grid { grid-template-columns: 1fr; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .filter-bar input, .filter-bar select { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<div id="loginOverlay" class="login-overlay">
+    <div class="login-card">
+        <div class="login-icon"><i class="fas fa-clipboard-list"></i></div>
+        <h2 style="margin-bottom: 8px; color:#a55672;">Добро пожаловать</h2>
+        <p style="color:#b2849a; margin-bottom: 20px;">Система контроля качества</p>
+        <form id="loginForm">
+            <div class="input-group"><label><i class="fas fa-user"></i> Логин</label><input type="text" id="loginUsername" placeholder="Логин" required></div>
+            <div class="input-group"><label><i class="fas fa-lock"></i> Пароль</label><input type="password" id="loginPassword" placeholder="Пароль" required></div>
+            <button type="submit" class="btn login-btn"><i class="fas fa-sign-in-alt"></i> Войти</button>
+        </form>
+        <div style="margin-top: 20px; font-size: 13px; color: #bc8f9e;">admin/admin — полные права<br>user/user — только просмотр</div>
+    </div>
+</div>
+
+<div id="mainApp" class="hidden">
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="logo-area"><i class="fas fa-clipboard-list"></i><h2>Контроль качества</h2></div>
+            <div class="nav-tabs" id="sidebarNav">
+                <div class="nav-item active" data-tab="responsibleEmployees"><i class="fas fa-user-check"></i> Сотрудники</div>
+                <div class="nav-item" data-tab="activities"><i class="fas fa-calendar-check"></i> Мероприятия</div>
+                <div class="nav-item" data-tab="products"><i class="fas fa-boxes"></i> Продукция</div>
+                <div class="nav-item" data-tab="reports"><i class="fas fa-file-alt"></i> Отчёты</div>
+                <div class="nav-item" data-tab="violations"><i class="fas fa-gavel"></i> Нарушения</div>
+            </div>
+            <div class="user-info-sidebar">
+                <div class="user-badge"><i class="fas fa-user-tag"></i><span id="roleDisplaySidebar">Администратор</span></div>
+                <button id="logoutBtnSidebar" class="logout-sidebar"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+        </aside>
+        <main class="main-content">
+            <div class="stats-grid">
+                <div class="stat-card"><i class="fas fa-users"></i><div class="stat-info"><span id="statEmployees">0</span><br><span>Сотрудников</span></div></div>
+                <div class="stat-card"><i class="fas fa-tasks"></i><div class="stat-info"><span id="statActivities">0</span><br><span>Мероприятий</span></div></div>
+                <div class="stat-card"><i class="fas fa-cubes"></i><div class="stat-info"><span id="statProducts">0</span><br><span>Продуктов</span></div></div>
+                <div class="stat-card"><i class="fas fa-exclamation-triangle"></i><div class="stat-info"><span id="statViolations">0</span><br><span>Нарушений</span></div></div>
+            </div>
+
+            <!-- Сотрудники -->
+            <div class="tab-content active" id="responsibleEmployees">
+                <h2><i class="fas fa-user-check"></i> Ответственные сотрудники</h2>
+                <div class="data-section"><h3>Список сотрудников</h3><div class="filter-bar"><div class="input-wrapper"><i class="fas fa-search"></i><input type="text" id="filterEmpName" placeholder="ФИО"></div><div class="input-wrapper"><i class="fas fa-briefcase"></i><input type="text" id="filterEmpPos" placeholder="Должность"></div></div><div style="overflow-x:auto"><table><thead><tr><th>ID</th><th>ФИО</th><th>Должность</th><th>Телефон</th><th>Email</th><th>Квалификация</th><th>Дата приёма</th><th>Области</th><th class="admin-only"></th></tr></thead><tbody id="mergedEmpTableBody"></tbody></table></div></div>
+                <div class="form-section admin-only hidden"><h3>Добавить сотрудника</h3><form id="employeeForm"><div class="form-grid"><div><label>ФИО</label><div class="input-wrapper"><i class="fas fa-user"></i><input id="empName" required></div></div><div><label>Должность</label><div class="input-wrapper"><i class="fas fa-briefcase"></i><input id="empPosition" required></div></div><div><label>Телефон</label><div class="input-wrapper"><i class="fas fa-phone"></i><input id="empPhone"></div></div><div><label>Email</label><div class="input-wrapper"><i class="fas fa-envelope"></i><input id="empEmail" required></div></div><div><label>Квалификация</label><div class="input-wrapper"><i class="fas fa-star"></i><select id="empQualification"><option>Младший специалист</option><option>Специалист</option><option>Старший специалист</option><option>Эксперт</option></select></div></div><div><label>Дата приёма</label><div class="input-wrapper"><i class="fas fa-calendar-alt"></i><input type="date" id="empHireDate"></div></div></div><button type="submit" class="btn">Добавить</button></form></div>
+                <div class="form-section admin-only hidden"><h3>Назначить зону ответственности</h3><form id="assignResponsibleForm"><div class="form-grid"><div><label>Сотрудник</label><select id="assignEmployeeId"></select></div><div><label>Область</label><input id="assignArea" placeholder="Например: Контроль сырья"></div></div><button type="submit" class="btn">Назначить</button></form></div>
+                <div class="data-section"><h3>Зоны ответственности</h3><div style="overflow-x:auto"><table><thead><tr><th>ID</th><th>Сотрудник</th><th>Область</th><th class="admin-only"></th></tr></thead><tbody id="assignmentsTableBody"></tbody></table></div></div>
+            </div>
+
+            <!-- Мероприятия -->
+            <div class="tab-content" id="activities">
+                <h2><i class="fas fa-calendar-check"></i> Мероприятия</h2>
+                <div class="form-section admin-only hidden"><h3>Добавить мероприятие</h3><form id="activityForm"><div class="form-grid"><div><label>Название</label><input id="actName" required></div><div><label>Дата</label><input type="date" id="actDate" required></div><div><label>Описание</label><textarea id="actDesc"></textarea></div><div><label>Ответственный</label><select id="actEmployee"></select></div><div><label>Статус</label><select id="actStatus"><option value="planned">Запланировано</option><option value="completed">Завершено</option></select></div></div><button type="submit" class="btn">Добавить</button></form></div>
+                <div class="data-section"><h3>Список мероприятий</h3><div class="filter-bar"><div class="input-wrapper"><i class="fas fa-tag"></i><input type="text" id="filterActName" placeholder="Название"></div><div class="input-wrapper"><i class="fas fa-calendar-day"></i><input type="date" id="filterActDateFrom" placeholder="Дата с"></div><div class="input-wrapper"><i class="fas fa-calendar-day"></i><input type="date" id="filterActDateTo" placeholder="Дата по"></div><div><select id="filterActStatus"><option value="">Все статусы</option><option value="planned">Запланировано</option><option value="completed">Завершено</option></select></div></div><div style="overflow-x:auto"><table><thead><tr><th>ID</th><th>Название</th><th>Дата</th><th>Ответственный</th><th>Статус</th><th class="admin-only"></th></tr></thead><tbody id="act-table-body"></tbody></table></div></div>
+            </div>
+
+            <!-- Продукция -->
+            <div class="tab-content" id="products">
+                <h2><i class="fas fa-boxes"></i> Продукция</h2>
+                <div class="form-section admin-only hidden"><h3>Добавить продукцию</h3><form id="productForm"><div class="form-grid"><div><label>Наименование</label><input id="prodName" required></div><div><label>Категория</label><select id="prodCategory"><option value="electronics">Электроника</option><option value="food">Продукты питания</option><option value="chemicals">Химия</option></select></div><div><label>Дата выпуска</label><input type="date" id="prodDate"></div><div><label>Партия</label><input id="prodBatch" required></div><div><label>Результаты</label><textarea id="prodResults"></textarea></div></div><button type="submit" class="btn">Добавить</button></form></div>
+                <div class="data-section"><h3>Список продукции</h3><div class="filter-bar"><div class="input-wrapper"><i class="fas fa-cube"></i><input type="text" id="filterProdName" placeholder="Наименование"></div><div class="input-wrapper"><i class="fas fa-calendar-day"></i><input type="date" id="filterProdDateFrom" placeholder="Дата с"></div><div class="input-wrapper"><i class="fas fa-calendar-day"></i><input type="date" id="filterProdDateTo" placeholder="Дата по"></div><select id="filterProdCat"><option value="">Все категории</option><option value="electronics">Электроника</option><option value="food">Продукты питания</option><option value="chemicals">Химия</option></select></div><div style="overflow-x:auto"><table><thead><tr><th>ID</th><th>Наименование</th><th>Категория</th><th>Дата выпуска</th><th>Партия</th><th>Результаты</th><th class="admin-only"></th></tr></thead><tbody id="prod-table-body"></tbody></table></div></div>
+            </div>
+
+            <!-- Отчёты -->
+            <div class="tab-content" id="reports">
+                <h2><i class="fas fa-file-alt"></i> Отчёты о качестве</h2>
+                <div class="form-section"><div style="display: flex; gap: 15px;"><button type="button" id="excelFullBtn" class="btn btn-outline"><i class="fas fa-download"></i> Выгрузить Excel (полный отчёт)</button><button type="button" id="pdfFullBtn" class="btn btn-outline"><i class="fas fa-file-pdf"></i> Выгрузить PDF (полный отчёт)</button></div></div>
+                <div class="form-section admin-only hidden"><h3>Создать отчёт</h3><form id="reportForm"><div class="form-grid"><div><label>Дата</label><input type="date" id="repDate" required></div><div><label>Результаты</label><textarea id="repResults" required></textarea></div><div><label>Рекомендации</label><textarea id="repRecommendations"></textarea></div><div><label>Статус</label><select id="repStatus"><option value="draft">Черновик</option><option value="approved">Утверждён</option></select></div></div><button type="submit" class="btn">Создать</button></form></div>
+                <div class="data-section"><h3>Отчёты</h3><div class="filter-bar"><select id="filterRepStatus"><option value="">Все статусы</option><option value="draft">Черновик</option><option value="approved">Утверждён</option></select><div class="input-wrapper"><i class="fas fa-calendar-day"></i><input type="date" id="filterRepDateFrom" placeholder="Дата с"></div><div class="input-wrapper"><i class="fas fa-calendar-day"></i><input type="date" id="filterRepDateTo" placeholder="Дата по"></div></div><div style="overflow-x:auto"><table><thead><tr><th>ID</th><th>Дата</th><th>Результаты</th><th>Рекомендации</th><th>Статус</th><th class="admin-only"></th></tr></thead><tbody id="rep-table-body"></tbody></table></div></div>
+            </div>
+
+            <!-- Нарушения (расширенный функционал) -->
+            <div class="tab-content" id="violations">
+                <h2><i class="fas fa-gavel"></i> Управление нарушениями</h2>
+                <div class="form-section admin-only hidden"><h3>Зарегистрировать нарушение</h3><form id="violationForm"><div class="form-grid"><div><label>Тип</label><select id="violType"><option value="quality">Нарушение качества</option><option value="delivery">Сроки поставки</option></select></div><div><label>Описание *</label><textarea id="violDesc" required></textarea></div><div><label>Дата выявления *</label><input type="date" id="violDate" required></div><div><label>Последствия</label><textarea id="violConsequences"></textarea></div><div><label>Ответственный (исполнитель)</label><select id="violResponsible"></select></div><div><label>Статус</label><select id="violStatus"><option value="open">Открыто</option><option value="in_work">В работе</option><option value="closed">Закрыто</option></select></div><div><label>Дата закрытия</label><input type="date" id="violClosedDate"></div></div><button type="submit" class="btn">Зарегистрировать</button></form></div>
+                <div class="data-section"><h3>Список нарушений</h3><div class="filter-bar"><div class="input-wrapper"><i class="fas fa-align-left"></i><input type="text" id="filterViolDesc" placeholder="Описание"></div><div class="input-wrapper"><i class="fas fa-calendar-day"></i><input type="date" id="filterViolDateFrom" placeholder="Дата с"></div><div class="input-wrapper"><i class="fas fa-calendar-day"></i><input type="date" id="filterViolDateTo" placeholder="Дата по"></div><select id="filterViolStatus"><option value="">Все статусы</option><option value="open">Открыто</option><option value="in_work">В работе</option><option value="closed">Закрыто</option></select><select id="filterViolType"><option value="">Все типы</option><option value="quality">Качество</option><option value="delivery">Сроки</option></select></div><div style="overflow-x:auto"><table><thead><tr><th>ID</th><th>Тип</th><th>Описание</th><th>Дата выявл.</th><th>Ответственный</th><th>Статус</th><th>Дата закрытия</th><th class="admin-only">Действия</th></tr></thead><tbody id="viol-table-body"></tbody></table></div></div>
+            </div>
+            <div class="footer"><i class="fas fa-copyright"></i> 2025 Система контроля качества</div>
+        </main>
+    </div>
+</div>
+
+<script>
+    let currentUser = null;
+    let employees = [], activities = [], products = [], responsibles = [], reports = [], violations = [];
+    let nextIds = { emp:1, act:1, prod:1, resp:1, rep:1, viol:1 };
+    let filters = { employees: { name: '', position: '' }, activities: { name: '', status: '', dateFrom: '', dateTo: '' }, products: { name: '', category: '', dateFrom: '', dateTo: '' }, reports: { status: '', dateFrom: '', dateTo: '' }, violations: { desc: '', type: '', status: '', dateFrom: '', dateTo: '' } };
+
+    function loadData() {
+        const data = localStorage.getItem('qualityData');
+        if(data) { const p = JSON.parse(data); employees = p.employees || []; activities = p.activities || []; products = p.products || []; responsibles = p.responsibles || []; reports = p.reports || []; violations = p.violations || []; nextIds = p.nextIds || { emp:1, act:1, prod:1, resp:1, rep:1, viol:1 }; }
+        else {
+            employees = [{ id:1, name:"Андреев Дмитрий Сергеевич", position:"Руководитель отдела качества", phone:"+7 (912) 345-67-89", email:"d.andreev@quality.ru", qualification:"Эксперт", hireDate:"10.01.2020" },{ id:2, name:"Васильева Елена Павловна", position:"Инженер по качеству", phone:"+7 (903) 456-78-90", email:"e.vasilieva@quality.ru", qualification:"Старший специалист", hireDate:"15.03.2021" },{ id:3, name:"Григорьев Артём Игоревич", position:"Специалист по контролю сырья", phone:"+7 (922) 567-89-01", email:"a.grigoriev@quality.ru", qualification:"Специалист", hireDate:"01.08.2022" },{ id:4, name:"Дмитриева Ольга Викторовна", position:"Метролог", phone:"+7 (909) 678-90-12", email:"o.dmitrieva@quality.ru", qualification:"Специалист", hireDate:"20.11.2021" },{ id:5, name:"Ермолов Максим Андреевич", position:"Аудитор качества", phone:"+7 (950) 789-01-23", email:"m.ermolov@quality.ru", qualification:"Эксперт", hireDate:"05.05.2019" }];
+            responsibles = [{ id:1, employeeId:1, area:"Общее руководство СМК" },{ id:2, employeeId:2, area:"Входной контроль" },{ id:3, employeeId:3, area:"Контроль сырья" },{ id:4, employeeId:4, area:"Поверка СИ" },{ id:5, employeeId:5, area:"Внутренние аудиты" }];
+            activities = [{ id:1, name:"Внутренний аудит", date:"15.02.2025", description:"", responsibleId:5, status:"completed" },{ id:2, name:"Калибровка", date:"10.03.2025", description:"", responsibleId:4, status:"completed" },{ id:3, name:"Контроль сырья", date:"25.04.2025", description:"", responsibleId:3, status:"planned" }];
+            products = [{ id:1, name:"Стабилизатор СН-500", category:"electronics", productionDate:"05.01.2025", batch:"Б-001/25", results:"Соответствует" },{ id:2, name:"Блок питания БП-200", category:"electronics", productionDate:"18.02.2025", batch:"Б-045/25", results:"Отклонения допустимы" }];
+            reports = [{ id:1, date:"31.01.2025", results:"Нормы соблюдены", recommendations:"Продолжать", status:"approved" },{ id:2, date:"28.02.2025", results:"Выявлены несоответствия", recommendations:"Усилить контроль", status:"approved" }];
+            violations = [{ id:1, type:"quality", description:"Влажность муки выше нормы", date:"03.03.2025", consequences:"Возврат поставщику", responsibleId:3, status:"closed", closedDate:"10.03.2025" },{ id:2, type:"delivery", description:"Срыв поставки", date:"10.02.2025", consequences:"Сдвиг графика", responsibleId:1, status:"in_work", closedDate:"" },{ id:3, type:"quality", description:"Заниженное содержание вещества", date:"22.03.2025", consequences:"Отзыв партии", responsibleId:2, status:"open", closedDate:"" }];
+            nextIds = { emp:6, act:4, prod:3, resp:6, rep:3, viol:4 };
+        }
+    }
+    function saveData() { localStorage.setItem('qualityData', JSON.stringify({ employees, activities, products, responsibles, reports, violations, nextIds })); }
+    function updateStats() { document.getElementById('statEmployees').innerText = employees.length; document.getElementById('statActivities').innerText = activities.length; document.getElementById('statProducts').innerText = products.length; document.getElementById('statViolations').innerText = violations.length; }
+    function getEmployeeName(id) { const e = employees.find(emp=>emp.id===id); return e ? e.name : '—'; }
+    function getEmployeeAreas(empId) { return responsibles.filter(r=>r.employeeId===empId).map(r=>r.area).join(', ') || '—'; }
+    window.addEmployee = (d) => { employees.push({id: nextIds.emp++, ...d}); saveData(); updateStats(); refreshMergedTables(); populateSelects(); };
+    window.deleteEmployee = (id) => { employees = employees.filter(e=>e.id!==id); responsibles = responsibles.filter(r=>r.employeeId!==id); saveData(); updateStats(); refreshMergedTables(); populateSelects(); };
+    window.addResponsible = (d) => { responsibles.push({id: nextIds.resp++, ...d}); saveData(); refreshMergedTables(); };
+    window.deleteResponsible = (id) => { responsibles = responsibles.filter(r=>r.id!==id); saveData(); refreshMergedTables(); };
+    window.addActivity = (d) => { activities.push({id: nextIds.act++, ...d}); saveData(); renderActivities(); updateStats(); };
+    window.deleteActivity = (id) => { activities = activities.filter(a=>a.id!==id); saveData(); renderActivities(); updateStats(); };
+    window.addProduct = (d) => { products.push({id: nextIds.prod++, ...d}); saveData(); renderProducts(); updateStats(); };
+    window.deleteProduct = (id) => { products = products.filter(p=>p.id!==id); saveData(); renderProducts(); updateStats(); };
+    window.addReport = (d) => { reports.push({id: nextIds.rep++, ...d}); saveData(); renderReports(); updateStats(); };
+    window.deleteReport = (id) => { reports = reports.filter(r=>r.id!==id); saveData(); renderReports(); updateStats(); };
+    window.addViolation = (d) => { violations.push({id: nextIds.viol++, ...d}); saveData(); renderViolations(); updateStats(); };
+    window.deleteViolation = (id) => { violations = violations.filter(v=>v.id!==id); saveData(); renderViolations(); updateStats(); };
+    window.updateViolationStatus = (id, newStatus, closedDate=null) => { const v = violations.find(v=>v.id===id); if(v) { v.status = newStatus; if(newStatus === 'closed' && closedDate) v.closedDate = closedDate; else if(newStatus !== 'closed') v.closedDate = ''; saveData(); renderViolations(); } };
+    
+    function renderViolations() {
+        let data = violations.filter(v => (filters.violations.desc==='' || v.description.toLowerCase().includes(filters.violations.desc.toLowerCase())) && (filters.violations.type==='' || v.type===filters.violations.type) && (filters.violations.status==='' || v.status===filters.violations.status));
+        if(filters.violations.dateFrom) data = data.filter(v => v.date >= filters.violations.dateFrom);
+        if(filters.violations.dateTo) data = data.filter(v => v.date <= filters.violations.dateTo);
+        const tbody = document.getElementById('viol-table-body');
+        if(tbody) tbody.innerHTML = data.map(v => `<tr><td>${v.id}</td><td>${v.type==='quality'?'Качество':'Сроки'}</td><td>${v.description}</td><td>${v.date}</td><td>${getEmployeeName(v.responsibleId)}</td><td><span class="${v.status==='open'?'status-open':v.status==='in_work'?'status-inwork':'status-closed'}">${v.status==='open'?'Открыто':v.status==='in_work'?'В работе':'Закрыто'}</span></td><td>${v.closedDate || '—'}</td>${currentUser === 'admin' ? `<td><button class="edit-status-btn" onclick="showStatusDialog(${v.id})"><i class="fas fa-pen"></i></button> <button class="delete-btn" onclick="deleteViolation(${v.id})"><i class="fas fa-trash-alt"></i></button></td>` : ''}</tr>`).join('');
+    }
+    window.showStatusDialog = (id) => { const newStatus = prompt('Изменить статус: open (Открыто), in_work (В работе), closed (Закрыто)'); if(newStatus && ['open','in_work','closed'].includes(newStatus)) { let closed = null; if(newStatus === 'closed') closed = new Date().toISOString().slice(0,10); updateViolationStatus(id, newStatus, closed); } };
+    
+    function renderActivities() { let data = activities.filter(a => a.name.toLowerCase().includes(filters.activities.name.toLowerCase()) && (filters.activities.status==='' || a.status===filters.activities.status)); if(filters.activities.dateFrom) data = data.filter(a => a.date >= filters.activities.dateFrom); if(filters.activities.dateTo) data = data.filter(a => a.date <= filters.activities.dateTo); document.getElementById('act-table-body').innerHTML = data.map(a => `<tr><td>${a.id}</td><td>${a.name}</td><td>${a.date}</td><td>${getEmployeeName(a.responsibleId)}</td><td><span class="${a.status==='completed'?'status-completed':'status-pending'}">${a.status==='completed'?'Завершено':'Запланировано'}</span></td>${currentUser === 'admin' ? `<td><button class="delete-btn" onclick="deleteActivity(${a.id})"><i class="fas fa-trash-alt"></i></button></td>` : ''}</tr>`).join(''); }
+    function renderProducts() { let data = products.filter(p => p.name.toLowerCase().includes(filters.products.name.toLowerCase()) && (filters.products.category==='' || p.category===filters.products.category)); if(filters.products.dateFrom) data = data.filter(p => p.productionDate >= filters.products.dateFrom); if(filters.products.dateTo) data = data.filter(p => p.productionDate <= filters.products.dateTo); document.getElementById('prod-table-body').innerHTML = data.map(p => `<tr><td>${p.id}</td><td>${p.name}</td><td>${p.category}</td><td>${p.productionDate}</td><td>${p.batch}</td><td>${p.results}</td>${currentUser === 'admin' ? `<td><button class="delete-btn" onclick="deleteProduct(${p.id})"><i class="fas fa-trash-alt"></i></button></td>` : ''}</tr>`).join(''); }
+    function renderReports() { let data = reports.filter(r => (filters.reports.status==='' || r.status===filters.reports.status)); if(filters.reports.dateFrom) data = data.filter(r => r.date >= filters.reports.dateFrom); if(filters.reports.dateTo) data = data.filter(r => r.date <= filters.reports.dateTo); document.getElementById('rep-table-body').innerHTML = data.map(r => `<tr><td>${r.id}</td><td>${r.date}</td><td>${r.results}</td><td>${r.recommendations||'—'}</td><td><span class="${r.status==='approved'?'status-approved':'status-pending'}">${r.status==='approved'?'Утверждён':'Черновик'}</span></td>${currentUser === 'admin' ? `<td><button class="delete-btn" onclick="deleteReport(${r.id})"><i class="fas fa-trash-alt"></i></button></td>` : ''}</tr>`).join(''); }
+    function refreshMergedTables() { renderMergedEmployeesTable(); renderResponsibleAssignmentsTable(); }
+    function renderMergedEmployeesTable() { let data = employees.filter(e => e.name.toLowerCase().includes(filters.employees.name.toLowerCase()) && e.position.toLowerCase().includes(filters.employees.position.toLowerCase())); document.getElementById('mergedEmpTableBody').innerHTML = data.map(emp => `<tr><td>${emp.id}</td><td>${emp.name}</td><td>${emp.position}</td><td>${emp.phone||'—'}</td><td>${emp.email}</td><td>${emp.qualification||'—'}</td><td>${emp.hireDate||'—'}</td><td>${getEmployeeAreas(emp.id)}</td>${currentUser==='admin'?`<td><button class="delete-btn" onclick="deleteEmployee(${emp.id})"><i class="fas fa-trash-alt"></i></button></td>`:''}</tr>`).join(''); }
+    function renderResponsibleAssignmentsTable() { document.getElementById('assignmentsTableBody').innerHTML = responsibles.map(r => { const emp = employees.find(e=>e.id===r.employeeId); return `<tr><td>${r.id}</td><td>${emp?emp.name:'—'}</td><td><span class="badge-responsible">${r.area}</span></td>${currentUser==='admin'?`<td><button class="delete-btn" onclick="deleteResponsible(${r.id})"><i class="fas fa-trash-alt"></i></button></td>`:''}</tr>`; }).join(''); }
+    function populateSelects() { document.getElementById('actEmployee').innerHTML = employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join(''); document.getElementById('assignEmployeeId').innerHTML = employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join(''); document.getElementById('violResponsible').innerHTML = employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join(''); }
+    async function exportPDF() { const element = document.createElement('div'); element.innerHTML = `<h2>Полный отчёт по качеству</h2>${generateReportHTML()}`; element.style.padding = '20px'; document.body.appendChild(element); const canvas = await html2canvas(element, { scale: 2 }); const imgData = canvas.toDataURL('image/png'); const { jsPDF } = window.jspdf; const pdf = new jsPDF('p', 'mm', 'a4'); const imgProps = pdf.getImageProperties(imgData); const pdfWidth = pdf.internal.pageSize.getWidth(); const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width; pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight); pdf.save(`quality_full_${new Date().toISOString().slice(0,19)}.pdf`); document.body.removeChild(element); }
+    function generateReportHTML() { return `<h3>Сотрудники</h3>${tableToHTML(employees.map(e=>({ID:e.id,ФИО:e.name,Должность:e.position,Телефон:e.email})))}<h3>Мероприятия</h3>${tableToHTML(activities.map(a=>({ID:a.id,Название:a.name,Дата:a.date,Статус:a.status})))}<h3>Продукция</h3>${tableToHTML(products.map(p=>({ID:p.id,Наименование:p.name,Партия:p.batch})))}<h3>Нарушения</h3>${tableToHTML(violations.map(v=>({ID:v.id,Описание:v.description,Статус:v.status})))}`; }
+    function tableToHTML(data) { if(!data.length) return '<p>Нет данных</p>'; let html = '<table border="1" cellpadding="5" style="border-collapse:collapse;"><td>'; Object.keys(data[0]).forEach(k=>html+=`<th>${k}</th>`); html+=`</tr>${data.map(row=>`<tr>${Object.values(row).map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}</table>`; return html; }
+    function initEventListeners() {
+        document.getElementById('filterEmpName')?.addEventListener('input', e=>{ filters.employees.name=e.target.value; renderMergedEmployeesTable(); });
+        document.getElementById('filterEmpPos')?.addEventListener('input', e=>{ filters.employees.position=e.target.value; renderMergedEmployeesTable(); });
+        document.getElementById('filterActName')?.addEventListener('input', e=>{ filters.activities.name=e.target.value; renderActivities(); });
+        document.getElementById('filterActStatus')?.addEventListener('change', e=>{ filters.activities.status=e.target.value; renderActivities(); });
+        document.getElementById('filterActDateFrom')?.addEventListener('change', e=>{ filters.activities.dateFrom=e.target.value; renderActivities(); });
+        document.getElementById('filterActDateTo')?.addEventListener('change', e=>{ filters.activities.dateTo=e.target.value; renderActivities(); });
+        document.getElementById('filterProdName')?.addEventListener('input', e=>{ filters.products.name=e.target.value; renderProducts(); });
+        document.getElementById('filterProdCat')?.addEventListener('change', e=>{ filters.products.category=e.target.value; renderProducts(); });
+        document.getElementById('filterProdDateFrom')?.addEventListener('change', e=>{ filters.products.dateFrom=e.target.value; renderProducts(); });
+        document.getElementById('filterProdDateTo')?.addEventListener('change', e=>{ filters.products.dateTo=e.target.value; renderProducts(); });
+        document.getElementById('filterRepStatus')?.addEventListener('change', e=>{ filters.reports.status=e.target.value; renderReports(); });
+        document.getElementById('filterRepDateFrom')?.addEventListener('change', e=>{ filters.reports.dateFrom=e.target.value; renderReports(); });
+        document.getElementById('filterRepDateTo')?.addEventListener('change', e=>{ filters.reports.dateTo=e.target.value; renderReports(); });
+        document.getElementById('filterViolDesc')?.addEventListener('input', e=>{ filters.violations.desc=e.target.value; renderViolations(); });
+        document.getElementById('filterViolType')?.addEventListener('change', e=>{ filters.violations.type=e.target.value; renderViolations(); });
+        document.getElementById('filterViolStatus')?.addEventListener('change', e=>{ filters.violations.status=e.target.value; renderViolations(); });
+        document.getElementById('filterViolDateFrom')?.addEventListener('change', e=>{ filters.violations.dateFrom=e.target.value; renderViolations(); });
+        document.getElementById('filterViolDateTo')?.addEventListener('change', e=>{ filters.violations.dateTo=e.target.value; renderViolations(); });
+        document.getElementById('excelFullBtn')?.addEventListener('click', ()=>{ const wb = XLSX.utils.book_new(); const sheets = { "Сотрудники": employees, "Мероприятия": activities, "Продукция": products, "Нарушения": violations, "Отчёты": reports }; for(const [name, data] of Object.entries(sheets)) { const ws = XLSX.utils.json_to_sheet(data); XLSX.utils.book_append_sheet(wb, ws, name); } XLSX.writeFile(wb, `quality_full_${new Date().toISOString().slice(0,19)}.xlsx`); });
+        document.getElementById('pdfFullBtn')?.addEventListener('click', exportPDF);
+        if(currentUser === 'admin') {
+            document.getElementById('employeeForm')?.addEventListener('submit', e=>{ e.preventDefault(); addEmployee({ name:document.getElementById('empName').value, position:document.getElementById('empPosition').value, phone:document.getElementById('empPhone').value, email:document.getElementById('empEmail').value, qualification:document.getElementById('empQualification').value, hireDate:document.getElementById('empHireDate').value||new Date().toLocaleDateString() }); e.target.reset(); });
+            document.getElementById('assignResponsibleForm')?.addEventListener('submit', e=>{ e.preventDefault(); addResponsible({ employeeId:parseInt(document.getElementById('assignEmployeeId').value), area:document.getElementById('assignArea').value }); e.target.reset(); });
+            document.getElementById('activityForm')?.addEventListener('submit', e=>{ e.preventDefault(); addActivity({ name:document.getElementById('actName').value, date:document.getElementById('actDate').value, description:document.getElementById('actDesc').value, responsibleId:parseInt(document.getElementById('actEmployee').value), status:document.getElementById('actStatus').value }); e.target.reset(); });
+            document.getElementById('productForm')?.addEventListener('submit', e=>{ e.preventDefault(); addProduct({ name:document.getElementById('prodName').value, category:document.getElementById('prodCategory').value, productionDate:document.getElementById('prodDate').value, batch:document.getElementById('prodBatch').value, results:document.getElementById('prodResults').value }); e.target.reset(); });
+            document.getElementById('reportForm')?.addEventListener('submit', e=>{ e.preventDefault(); addReport({ date:document.getElementById('repDate').value, results:document.getElementById('repResults').value, recommendations:document.getElementById('repRecommendations').value, status:document.getElementById('repStatus').value }); e.target.reset(); });
+            document.getElementById('violationForm')?.addEventListener('submit', e=>{ e.preventDefault(); addViolation({ type:document.getElementById('violType').value, description:document.getElementById('violDesc').value, date:document.getElementById('violDate').value, consequences:document.getElementById('violConsequences').value, responsibleId:parseInt(document.getElementById('violResponsible').value)||null, status:document.getElementById('violStatus').value, closedDate:document.getElementById('violClosedDate').value }); e.target.reset(); });
+        }
+    }
+    function applyUIPermissions() { const isAdmin = currentUser === 'admin'; document.querySelectorAll('.admin-only').forEach(el => { if(isAdmin) el.classList.remove('hidden'); else el.classList.add('hidden'); }); document.querySelectorAll('th.admin-only').forEach(th => { if(isAdmin) th.classList.remove('hidden'); else th.classList.add('hidden'); }); }
+    function initSidebarTabs() { document.querySelectorAll('.nav-item').forEach(item => { item.addEventListener('click', () => { document.querySelectorAll('.nav-item').forEach(nav=>nav.classList.remove('active')); item.classList.add('active'); document.querySelectorAll('.tab-content').forEach(content=>content.classList.remove('active')); document.getElementById(item.getAttribute('data-tab')).classList.add('active'); }); }); }
+    function loginAs(login, pass) { if(login === 'admin' && pass === 'admin') currentUser = 'admin'; else if(login === 'user' && pass === 'user') currentUser = 'user'; else { alert('Неверный логин или пароль'); return false; } document.getElementById('roleDisplaySidebar').innerText = currentUser==='admin'?'Администратор':'Пользователь'; document.getElementById('loginOverlay').classList.add('hidden'); document.getElementById('mainApp').classList.remove('hidden'); loadData(); applyUIPermissions(); populateSelects(); refreshMergedTables(); renderActivities(); renderProducts(); renderReports(); renderViolations(); updateStats(); initEventListeners(); initSidebarTabs(); return true; }
+    document.getElementById('loginForm')?.addEventListener('submit', (e) => { e.preventDefault(); loginAs(document.getElementById('loginUsername').value, document.getElementById('loginPassword').value); });
+    document.getElementById('logoutBtnSidebar')?.addEventListener('click', () => { currentUser = null; document.getElementById('mainApp').classList.add('hidden'); document.getElementById('loginOverlay').classList.remove('hidden'); });
+    loadData();
+</script>
+</body>
+</html>
